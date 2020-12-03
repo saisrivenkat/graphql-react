@@ -1,65 +1,143 @@
-import Head from 'next/head'
-import styles from '../styles/Home.module.css'
+import Head from "next/head";
+import Image from "next/image";
+import { useState } from "react";
+import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
+import styles from "../styles/Home.module.css";
+import {
+  Heading,
+  Input,
+  SimpleGrid,
+  Stack,
+  IconButton,
+  Text,
+  Box,
+  Flex,
+} from "@chakra-ui/react";
 
-export default function Home() {
+import { SearchIcon } from "@chakra-ui/icons";
+
+const client = new ApolloClient({
+  uri: "https://rickandmortyapi.com/graphql/",
+  cache: new InMemoryCache(),
+});
+
+export default function Home(results) {
+  const [search, setSearch] = useState("");
+  const [characters, setCharacters] = useState(results.characters);
   return (
-    <div className={styles.container}>
+    <Flex direction="column" justify="center" align="center">
       <Head>
-        <title>Create Next App</title>
+        <title>NextJS Apollo Crash Course</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+      <Box mb={4} flexDirection="column" align="center" justify="center" py={8}>
+        <Heading as="h1" size="2xl" mb={8}>
+          Ricky and Morty{" "}
+        </Heading>
+        <Stack maxWidth="350px" width="100%" isInline mb={8}>
+          <Input
+            placeholder="Search"
+            border="none"
+            onChange={(e) => setSearch(e.target.value)}
+          ></Input>
+          <IconButton
+            colorScheme="blue"
+            aria-label="Search database"
+            icon={<SearchIcon />}
+            disabled={search === ""}
+            onClick={async () => {
+              const { data } = await client.query({
+                query: gql`
+                  query {
+                    characters(filter: { name: "${search}" }) {
+                      info {
+                        count
+                      }
+                      results {
+                        name
+                        location {
+                          name
+                          id
+                        }
+                        image
+                        origin {
+                          name
+                          id
+                        }
+                        episode {
+                          id
+                          episode
+                          air_date
+                        }
+                      }
+                    }
+                  }
+                `,
+              });
+              console.log(data.characters.results);
+              setCharacters(await data.characters.results);
+            }}
+          />
+        </Stack>
 
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
+        <SimpleGrid columns={[1, 2, 3]} spacing="40px">
+          {characters.map((character) => {
+            return (
+              <div key={character.name}>
+                <Image src={character.image} width={300} height={300} />
+                <Heading as="h4" align="center" size="md">
+                  {character.name}
+                </Heading>
+                <Text align="center">Origin: {character.origin.name}</Text>
+                <Text align="center">Location: {character.location.name}</Text>
+              </div>
+            );
+          })}
+        </SimpleGrid>
+      </Box>
 
       <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
+        Powered by Energy Drinks 🥫 and YouTube Subscribers.
       </footer>
-    </div>
-  )
+    </Flex>
+  );
+}
+
+export async function getStaticProps() {
+  const { data } = await client.query({
+    query: gql`
+      query {
+        characters(page: 1) {
+          info {
+            count
+            pages
+          }
+          results {
+            name
+            location {
+              name
+              id
+            }
+            image
+            origin {
+              name
+              id
+            }
+            episode {
+              id
+              episode
+              air_date
+            }
+          }
+        }
+      }
+    `,
+  });
+
+  return {
+    props: {
+      characters: data.characters.results,
+    }, // will be passed to the page component as props
+  };
 }
