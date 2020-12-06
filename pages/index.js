@@ -24,6 +24,7 @@ const client = new ApolloClient({
 export default function Home(results) {
   const [search, setSearch] = useState("");
   const [characters, setCharacters] = useState(results.characters);
+
   return (
     <Flex direction="column" justify="center" align="center">
       <Head>
@@ -33,7 +34,7 @@ export default function Home(results) {
 
       <Box mb={4} flexDirection="column" align="center" justify="center" py={8}>
         <Heading as="h1" size="2xl" mb={8}>
-          Ricky and Morty{" "}
+          Rick and Morty{" "}
         </Heading>
         <Stack maxWidth="350px" width="100%" isInline mb={8}>
           <Input
@@ -75,7 +76,6 @@ export default function Home(results) {
                   }
                 `,
               });
-              console.log(data.characters.results);
               setCharacters(await data.characters.results);
             }}
           />
@@ -84,7 +84,7 @@ export default function Home(results) {
         <SimpleGrid columns={[1, 2, 3]} spacing="40px">
           {characters.map((character) => {
             return (
-              <div key={character.name}>
+              <div key={character.id}>
                 <Image src={character.image} width={300} height={300} />
                 <Heading as="h4" align="center" size="md">
                   {character.name}
@@ -115,6 +115,7 @@ export async function getStaticProps() {
           }
           results {
             name
+            id
             location {
               name
               id
@@ -137,7 +138,8 @@ export async function getStaticProps() {
 
   return {
     props: {
+      info: data.characters.info,
       characters: data.characters.results,
-    }, // will be passed to the page component as props
+    },
   };
 }
