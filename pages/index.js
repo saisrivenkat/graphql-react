@@ -23,8 +23,7 @@ const client = new ApolloClient({
 
 export default function Home(results) {
   const searchCharacters = async () => {
-    console.log(search);
-    const data = await client
+    const results = await client
       .query({
         query: gql`
           query {
@@ -56,7 +55,9 @@ export default function Home(results) {
       .catch((e) => {
         console.log(e);
       });
-    if (data) {
+    if (results) {
+      const { data } = results;
+      console.log(data);
       setCharacters(await data.characters.results);
     }
   };
