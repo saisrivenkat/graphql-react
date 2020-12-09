@@ -14,7 +14,7 @@ import {
   Flex,
 } from "@chakra-ui/react";
 
-import { SearchIcon } from "@chakra-ui/icons";
+import { SearchIcon, CloseIcon } from "@chakra-ui/icons";
 
 const client = new ApolloClient({
   uri: "https://rickandmortyapi.com/graphql/",
@@ -36,20 +36,11 @@ export default function Home(results) {
         <Heading as="h1" size="2xl" mb={8}>
           Rick and Morty{" "}
         </Heading>
-        <Stack maxWidth="350px" width="100%" isInline mb={8}>
-          <Input
-            placeholder="Search"
-            border="none"
-            onChange={(e) => setSearch(e.target.value)}
-          ></Input>
-          <IconButton
-            colorScheme="blue"
-            aria-label="Search database"
-            icon={<SearchIcon />}
-            disabled={search === ""}
-            onClick={async () => {
-              const { data } = await client.query({
-                query: gql`
+        <form
+          onSubmit={async (event) => {
+            event.preventDefault();
+            const { data } = await client.query({
+              query: gql`
                   query {
                     characters(filter: { name: "${search}" }) {
                       info {
@@ -75,12 +66,35 @@ export default function Home(results) {
                     }
                   }
                 `,
-              });
-              setCharacters(await data.characters.results);
-            }}
-          />
-        </Stack>
-
+            });
+            setCharacters(await data.characters.results);
+          }}
+        >
+          <Stack maxWidth="350px" width="100%" isInline mb={8}>
+            <Input
+              placeholder="Search"
+              value={search}
+              border="none"
+              onChange={(e) => setSearch(e.target.value)}
+            ></Input>
+            <IconButton
+              colorScheme="blue"
+              aria-label="Search database"
+              icon={<SearchIcon />}
+              disabled={search === ""}
+              type="submit"
+            />
+            <IconButton
+              colorScheme="red"
+              aria-label="Search database"
+              icon={<CloseIcon />}
+              disabled={search === ""}
+              onClick={() => {
+                setSearch("");
+              }}
+            />
+          </Stack>
+        </form>
         <SimpleGrid columns={[1, 2, 3]} spacing="40px">
           {characters.map((character) => {
             return (
