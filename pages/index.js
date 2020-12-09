@@ -22,8 +22,47 @@ const client = new ApolloClient({
 });
 
 export default function Home(results) {
+  const searchCharacters = async () => {
+    console.log(search);
+    const data = await client
+      .query({
+        query: gql`
+          query {
+            characters(filter: { name: "${search}" }) {
+              info {
+                count
+              }
+              results {
+                name
+                location {
+                  name
+                  id
+                }
+                image
+                origin {
+                  name
+                  id
+                }
+                episode {
+                  id
+                  episode
+                  air_date
+                }
+              }
+            }
+          }
+        `,
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+    if (data) {
+      setCharacters(await data.characters.results);
+    }
+  };
+  const intialState = results;
   const [search, setSearch] = useState("");
-  const [characters, setCharacters] = useState(results.characters);
+  const [characters, setCharacters] = useState(intialState.characters);
 
   return (
     <Flex direction="column" justify="center" align="center">
@@ -39,40 +78,13 @@ export default function Home(results) {
         <form
           onSubmit={async (event) => {
             event.preventDefault();
-            const { data } = await client.query({
-              query: gql`
-                  query {
-                    characters(filter: { name: "${search}" }) {
-                      info {
-                        count
-                      }
-                      results {
-                        name
-                        location {
-                          name
-                          id
-                        }
-                        image
-                        origin {
-                          name
-                          id
-                        }
-                        episode {
-                          id
-                          episode
-                          air_date
-                        }
-                      }
-                    }
-                  }
-                `,
-            });
-            setCharacters(await data.characters.results);
+            await searchCharacters();
           }}
         >
           <Stack maxWidth="350px" width="100%" isInline mb={8}>
             <Input
               placeholder="Search"
+              id="search"
               value={search}
               border="none"
               onChange={(e) => setSearch(e.target.value)}
@@ -89,8 +101,9 @@ export default function Home(results) {
               aria-label="Search database"
               icon={<CloseIcon />}
               disabled={search === ""}
-              onClick={() => {
+              onClick={async () => {
                 setSearch("");
+                setCharacters(intialState.characters);
               }}
             />
           </Stack>
