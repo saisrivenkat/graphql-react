@@ -1,69 +1,25 @@
 import Head from "next/head";
-import Image from "next/image";
 import { useState } from "react";
 import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
 import styles from "../styles/Home.module.css";
 import {
   Heading,
   Input,
-  SimpleGrid,
   Stack,
   IconButton,
-  Text,
   Box,
   Flex,
+  useToast,
 } from "@chakra-ui/react";
-
 import { SearchIcon, CloseIcon } from "@chakra-ui/icons";
 
-const client = new ApolloClient({
-  uri: "https://rickandmortyapi.com/graphql/",
-  cache: new InMemoryCache(),
-});
+import Character from "../components/Character";
 
 export default function Home(results) {
-  const searchCharacters = async () => {
-    const results = await client
-      .query({
-        query: gql`
-          query {
-            characters(filter: { name: "${search}" }) {
-              info {
-                count
-              }
-              results {
-                name
-                location {
-                  name
-                  id
-                }
-                image
-                origin {
-                  name
-                  id
-                }
-                episode {
-                  id
-                  episode
-                  air_date
-                }
-              }
-            }
-          }
-        `,
-      })
-      .catch((e) => {
-        console.log(e);
-      });
-    if (results) {
-      const { data } = results;
-      console.log(data);
-      setCharacters(await data.characters.results);
-    }
-  };
   const intialState = results;
   const [search, setSearch] = useState("");
   const [characters, setCharacters] = useState(intialState.characters);
+  const toast = useToast();
 
   return (
     <Flex direction="column" justify="center" align="center">
@@ -79,13 +35,28 @@ export default function Home(results) {
         <form
           onSubmit={async (event) => {
             event.preventDefault();
-            await searchCharacters();
+            const results = await fetch("/api/SearchCharacters", {
+              method: "post",
+              body: search,
+            });
+            const { characters, error } = await results.json();
+            if (error) {
+              toast({
+                position: "bottom",
+                title: "An error occurred.",
+                description: error,
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+              });
+            } else {
+              setCharacters(characters);
+            }
           }}
         >
           <Stack maxWidth="350px" width="100%" isInline mb={8}>
             <Input
               placeholder="Search"
-              id="search"
               value={search}
               border="none"
               onChange={(e) => setSearch(e.target.value)}
@@ -99,7 +70,7 @@ export default function Home(results) {
             />
             <IconButton
               colorScheme="red"
-              aria-label="Search database"
+              aria-label="Reset "
               icon={<CloseIcon />}
               disabled={search === ""}
               onClick={async () => {
@@ -109,20 +80,7 @@ export default function Home(results) {
             />
           </Stack>
         </form>
-        <SimpleGrid columns={[1, 2, 3]} spacing="40px">
-          {characters.map((character) => {
-            return (
-              <div key={character.id}>
-                <Image src={character.image} width={300} height={300} />
-                <Heading as="h4" align="center" size="md">
-                  {character.name}
-                </Heading>
-                <Text align="center">Origin: {character.origin.name}</Text>
-                <Text align="center">Location: {character.location.name}</Text>
-              </div>
-            );
-          })}
-        </SimpleGrid>
+        <Character characters={characters} />
       </Box>
 
       <footer className={styles.footer}>
@@ -133,6 +91,10 @@ export default function Home(results) {
 }
 
 export async function getStaticProps() {
+  const client = new ApolloClient({
+    uri: "https://rickandmortyapi.com/graphql/",
+    cache: new InMemoryCache(),
+  });
   const { data } = await client.query({
     query: gql`
       query {
@@ -166,7 +128,6 @@ export async function getStaticProps() {
 
   return {
     props: {
-      info: data.characters.info,
       characters: data.characters.results,
     },
   };
