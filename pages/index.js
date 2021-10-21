@@ -82,10 +82,6 @@ export default function Home(results) {
         </form>
         <Character characters={characters} />
       </Box>
-
-      <footer className={styles.footer}>
-        Powered by Energy Drinks 🥫 and YouTube Subscribers.
-      </footer>
     </Flex>
   );
 }
